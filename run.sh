@@ -1,5 +1,5 @@
 cd src
-/usr/lib/jvm/default-java/bin/javac -d ../bin thud/simpel/SimpelModel.java
+/usr/lib/jvm/default-java/bin/javac -d ../bin thud/simpel/*.java 
 cd ../bin
 directory=../example/
 #readETFromFile=readET
