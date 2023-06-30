@@ -582,7 +582,6 @@ public class SimpelModel
 	{
 		return directory;
 	}
-
 	public void setDirectory(String directory)
 	{
 		this.directory = directory;
@@ -591,7 +590,6 @@ public class SimpelModel
 	{
 		return readETfromFile;
 	}
-
 	public void setReadETFromFile(String readET)
 	{
 		if (readET.equals("readET"))
@@ -602,10 +600,5 @@ public class SimpelModel
 		{
 			readETfromFile=false;
 		}
-		
 	}
-	
-	
-	
-	
 }
