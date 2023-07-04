@@ -65,6 +65,7 @@ public class SimpelModel
     public final static int LAI_DOY = 0;
     public final static int LAI_LAI = 1;
     public final static int LAI_V3 = 2;
+    public final static double SECONDS_PER_DAY = 86400.;
     
     
     
@@ -96,6 +97,7 @@ public class SimpelModel
     
   //public int numColumnsInput = 6;  //hardcoding this for now.
     private boolean readETfromFile = false; //hardcoding this for now. $kf2023-06-23
+    private double ts = 86400.; // model time step in seconds
     int krowEnd = 0;
     boolean hasKdown = false;
     boolean hasWindSpeed = false;
@@ -237,6 +239,8 @@ public class SimpelModel
 		  
 		  double laimodel43 = Double.parseDouble(LAI_model.get(3)[2]); // LAI_model[4,3]
 		  double laimodel42 = Double.parseDouble(LAI_model.get(3)[1]); // LAI_model[4,2]
+        
+          double nt = ts / SECONDS_PER_DAY; // fractional time step
 		   
 //		  # calculate the rest
 		  for(int krow=0;krow<Input.size();krow++)
@@ -253,7 +257,7 @@ public class SimpelModel
 		    	bucket_model[krow][SNOW_WATER_EQUI] = init_swe; //# col 3 // $kf set to init_swe for consistency with water balance
 		      
 //		      # col 4: D Snow melt + rain
-		      double[] temp = new double[]{0, landuse_DayDegree*t14};
+		      double[] temp = new double[]{0, landuse_DayDegree*t14 * nt};
 		      if(t14 >= 0)
 		      {
 		        bucket_model[krow][SNOW_MELT_RAIN] = Math.min(0,(max(temp))) + bucket_model[krow][PRECIPITATION];
@@ -273,7 +277,7 @@ public class SimpelModel
 		    {
 		    	double t14_1 = Double.parseDouble(Input.get(krow)[INPUT_T14]);
 		    	
-		      double[] temp = new double[]{0, landuse_DayDegree*t14_1};
+		      double[] temp = new double[]{0, landuse_DayDegree*t14_1 * nt};
 		      if(t14_1 < 0)
 		      {
 //		        # col 4: Snow melt + rain 
@@ -314,7 +318,7 @@ public class SimpelModel
 		    { 
 		    	//# if not calculate ETP
 		    	bucket_model[krow][ETP_INPUT] = Math.min(7, bucket_model[krow][ETP_COEFF]*6.11*
-			    		  Math.pow(10,((7.5*t14)/(237.3+t14)))*(1.-(rh14/100.))); // $kf: relative humidity fixed
+			    		  Math.pow(10,((7.5*t14)/(237.3+t14)))*(1.-(rh14/100.))) * nt; // $kf: relative humidity fixed
 		    }
 		    
 //		    # col 7: G LAI
