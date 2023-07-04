@@ -732,8 +732,6 @@ RAD June 2008.
 	//! Calculate saturated water vapour pressure (Pa) at temperature TAC (Celsius)
 	//! from Jones 1992 p 110 (note error in a - wrong units)
 	//!**********************************************************************
-	//  IMPLICIT NONE
-	//  REAL TAC
 	  double SATUR = 613.75*Math.exp(17.502*TAC/(240.97+TAC));
 	  return SATUR;
 	}

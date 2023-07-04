@@ -17,4 +17,5 @@ Koeff. c;150;-
 Lambda;0.00015;-	
 Cap. Litter;0;(mm)
 Init-Value Litter;0;(mm)
-Litter Reduction factor;3;-	
+Litter Reduction factor;3;-
+Timestep;24;	

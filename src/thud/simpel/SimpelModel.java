@@ -14,6 +14,9 @@ import java.util.TreeMap;
 
 public class SimpelModel
 {	
+	  //TODO utilize kdown, ldown, wind speed, now available in Global_Input
+	  //TODO, Use timestep values, Hourly value for timestep now configured in Soil_physics: Timestep;24;
+	
 	private String directory = "/home/kerryn/git/2023-06-SimpelSoilWaterModels/SIMPLE/";
 	
 	public final static int PRECIPITATION=0; 
@@ -45,16 +48,47 @@ public class SimpelModel
     public final static int I_LITTER=26;	
     public final static int ETA_TOTAL=27;	
     
-    public final static int INPUT_DATE=0;
-    public final static int INPUT_DOY=1;	
-    public final static int INPUT_P=2;	
-    public final static int INPUT_T14=3;	
-    public final static int INPUT_R14=4;	
-    public final static int INPUT_ET0=5;
+    public final static int K_DOWN=28;	
+    public final static int WIND_SPEED=29;	
+    public final static int L_DOWN=30;	
+    
+    public static int INPUT_DATE=0;
+    public static int INPUT_DOY=1;	
+    public static int INPUT_P=2;	
+    public static int INPUT_T14=3;	
+    public static int INPUT_R14=4;	
+    public static int INPUT_ET0=5;    
+    public static int INPUT_K_DOWN=6;
+    public static int INPUT_WIND_SPEED=7;
+    public static int INPUT_L_DOWN=8;
     
     public final static int LAI_DOY = 0;
     public final static int LAI_LAI = 1;
     public final static int LAI_V3 = 2;
+    
+    
+    
+    public final static String FIELD_CAPACITY_PERCENT = "Field Capacity %";
+    public final static String PERMANENT_WILTING_POINT = "Permanent Wilting Point %";
+    public final static String START_OF_REDUCTION_PERCENT = "Start of Reduction %";
+    public final static String ROOT_DEPTH = "Root Depth";
+    public final static String INIT_VALUE_SOIL_PERCENT = "Init-Value Soil %";
+    public final static String FIELD_CAPACITY = "Field Capacity";
+    public final static String PERM_WILTING_POINT = "Perm. Wilting Point";
+    public final static String FWC = "FWC";
+    public final static String START_OF_REDUCTION = "Start of Reduction";
+    public final static String INIT_VALUE_SOIL = "Init-Value Soil";
+    public final static String DEPTH_OF_SOIL = "Depth of soil";	
+    public final static String LAND_USE = "Land use";
+    public final static String MINIMUM_LAI = "Minimum LAI";
+    public final static String MAXIMUM_LAI = "Maximum LAI";
+    public final static String DIRECT_RUNOFF_FACTOR = "Direct runoff factor";				
+    public final static String KOEFF_C = "Koeff. c";
+    public final static String LAMBDA = "Lambda";	
+    public final static String CAP_LITTER = "Cap. Litter";
+    public final static String INIT_VALUE_LITTER = "Init-Value Litter";
+    public final static String LITTER_REDUCTION_FACTOR = "Litter Reduction factor";	
+    public final static String TIMESTEP = "Timestep";	
     
     public final String tab = "\t";
     public final String linefeed = "\n";
@@ -63,6 +97,9 @@ public class SimpelModel
   //public int numColumnsInput = 6;  //hardcoding this for now.
     private boolean readETfromFile = false; //hardcoding this for now. $kf2023-06-23
     int krowEnd = 0;
+    boolean hasKdown = false;
+    boolean hasWindSpeed = false;
+    boolean hasLdown = false;
 
 	public static void main(String[] args)
 	{
@@ -82,17 +119,19 @@ public class SimpelModel
 	
 	public void process()
 	{
-		ArrayList<String[]> Input = readLargerTextFileAlternateToArray(directory + "Global_Input.txt", true, "\\s+");
-		ArrayList<String[]> Landuse = readLargerTextFileAlternateToArray(directory + "Land_Use.txt", true, "\\s+");
-		ArrayList<String[]> Landuses = readLargerTextFileAlternateToArray(directory + "Land_Use.txt", false, "\\s+");
+		ArrayList<String[]> Input = readLargerTextFileAlternateToArray(directory + "Global_Input.txt", true, "\\s+",false);
+		ArrayList<String[]> InputHeader = readLargerTextFileAlternateToArray(directory + "Global_Input.txt", false, "\\s+",true);
+		matchInputHeaders(InputHeader);
+		ArrayList<String[]> Landuse = readLargerTextFileAlternateToArray(directory + "Land_Use.txt", true, "\\s+",false);
+		ArrayList<String[]> Landuses = readLargerTextFileAlternateToArray(directory + "Land_Use.txt", false, "\\s+",false);
 		String[] landusesHeader = Landuses.get(0);
 		TreeMap<String,Integer> landusesIndexes = new TreeMap<String,Integer>();
 		for (int i=1;i<landusesHeader.length;i++)
 		{
 			landusesIndexes.put( landusesHeader[i], i);
 		}
-		ArrayList<String[]> LAI_model = readLargerTextFileAlternateToArray(directory + "LAI_model.txt", true, "\\s+");
-		ArrayList<String[]> Soil = readLargerTextFileAlternateToArray(directory + "Soil_physics.txt", false, ";");
+		ArrayList<String[]> LAI_model = readLargerTextFileAlternateToArray(directory + "LAI_model.txt", true, "\\s+",false);
+		TreeMap<String,String[]> Soil = readLargerTextFileAlternateToTreeMap(directory + "Soil_physics.txt", false, ";");
 		String output = directory + "SIMPLE_bucket_model.csv";
 
 		double[][] bucket_model = SIMPLE_function(Input, Landuse, LAI_model, Soil, landusesIndexes);
@@ -100,29 +139,35 @@ public class SimpelModel
 
 	}
 	
+	
 	public double[][] SIMPLE_function(ArrayList<String[]> Input, ArrayList<String[]> Landuse, 
-			ArrayList<String[]> LAI_model, ArrayList<String[]> Soil, TreeMap<String,Integer> landusesIndexes)
+			ArrayList<String[]> LAI_model, TreeMap<String,String[]> Soil, TreeMap<String,Integer> landusesIndexes)
 	{		
-		double Field_Capacity_Percent=Double.parseDouble(Soil.get(0)[1]);//Soil[1][2]
-		double Permanent_Wilting_Point=Double.parseDouble(Soil.get(1)[1]);//Soil[2][2]
-		double Start_of_Reduction_Percent=Double.parseDouble(Soil.get(2)[1]);//Soil[3][2]
-		double Root_Depth=Double.parseDouble(Soil.get(3)[1]);//Soil[4][2]
-		double Init_Value_Soil_Percent=Double.parseDouble(Soil.get(4)[1]);//Soil[5][2]
-		double Field_Capacity=Double.parseDouble(Soil.get(5)[1]);//Soil[6][2]
-		double Perm_Wilting_Point=Double.parseDouble(Soil.get(6)[1]);//Soil[7][2]
-		double FWC=Double.parseDouble(Soil.get(7)[1]);//Soil[8][2]
-		double Start_of_Reduction=Double.parseDouble(Soil.get(8)[1]);//Soil[9][2]
-		double Init_Value_Soil=Double.parseDouble(Soil.get(9)[1]);//Soil[10][2]
-		double Depth_of_soil=Double.parseDouble(Soil.get(10)[1]);//Soil[11][2]
-		String Land_use=Soil.get(11)[1];//Soil[12][2]
-		double Minimum_LAI=Double.parseDouble(Soil.get(12)[1]);//Soil[13][2]
-		double Maximum_LAI=Double.parseDouble(Soil.get(13)[1]);//Soil[14][2]
-		double Direct_runoff_factor=Double.parseDouble(Soil.get(14)[1]);//Soil[15][2]			
-		double Koeff_c=Double.parseDouble(Soil.get(15)[1]);//Soil[16][2]
-		double Lambda=Double.parseDouble(Soil.get(16)[1]);//Soil[17][2]
-		double Cap_Litter=Double.parseDouble(Soil.get(17)[1]);//Soil[18][2]
-		double Init_Value_Litter=Double.parseDouble(Soil.get(18)[1]);//Soil[19][2]
-		double Litter_Reduction_factor=Double.parseDouble(Soil.get(19)[1]);//Soil[20][2]
+		double Field_Capacity_Percent=Double.parseDouble(Soil.get(FIELD_CAPACITY_PERCENT)[1]);//Soil[1][2]
+		double Permanent_Wilting_Point=Double.parseDouble(Soil.get(PERMANENT_WILTING_POINT)[1]);//Soil[2][2]
+		double Start_of_Reduction_Percent=Double.parseDouble(Soil.get(START_OF_REDUCTION_PERCENT)[1]);//Soil[3][2]
+		double Root_Depth=Double.parseDouble(Soil.get(ROOT_DEPTH)[1]);//Soil[4][2]
+		double Init_Value_Soil_Percent=Double.parseDouble(Soil.get(INIT_VALUE_SOIL_PERCENT)[1]);//Soil[5][2]
+		double Field_Capacity=Double.parseDouble(Soil.get(FIELD_CAPACITY)[1]);//Soil[6][2]
+		double Perm_Wilting_Point=Double.parseDouble(Soil.get(PERM_WILTING_POINT)[1]);//Soil[7][2]
+		double fwc=Double.parseDouble(Soil.get(FWC)[1]);//Soil[8][2]
+		double Start_of_Reduction=Double.parseDouble(Soil.get(START_OF_REDUCTION)[1]);//Soil[9][2]
+		double Init_Value_Soil=Double.parseDouble(Soil.get(INIT_VALUE_SOIL)[1]);//Soil[10][2]
+		double Depth_of_soil=Double.parseDouble(Soil.get(DEPTH_OF_SOIL)[1]);//Soil[11][2]
+		String Land_use=Soil.get(LAND_USE)[1];//Soil[12][2]
+		double Minimum_LAI=Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);//Soil[13][2]
+		double Maximum_LAI=Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);//Soil[14][2]
+		double Direct_runoff_factor=Double.parseDouble(Soil.get(DIRECT_RUNOFF_FACTOR)[1]);//Soil[15][2]			
+		double Koeff_c=Double.parseDouble(Soil.get(KOEFF_C)[1]);//Soil[16][2]
+		double Lambda=Double.parseDouble(Soil.get(LAMBDA)[1]);//Soil[17][2]
+		double Cap_Litter=Double.parseDouble(Soil.get(CAP_LITTER)[1]);//Soil[18][2]
+		double Init_Value_Litter=Double.parseDouble(Soil.get(INIT_VALUE_LITTER)[1]);//Soil[19][2]
+		double Litter_Reduction_factor=Double.parseDouble(Soil.get(LITTER_REDUCTION_FACTOR)[1]);//Soil[20][2]
+		
+		// KN 5/7/23, added a timestep. Date values in Global_Input can be
+		// 02.01.1995.00, 02.01.1995.12 
+		// ETP_COEFF requires the month to be the second item in the date (split by '.')
+		double timestep=Double.parseDouble(Soil.get(TIMESTEP)[1]);  
 		
 		int landuseIndex = landusesIndexes.get(Land_use); 
 		
@@ -133,17 +178,30 @@ public class SimpelModel
 //      # translated to Java by Kerry Nice 20 June 2023
 
 //		  # prepare bucket model matrix
-		double[][] bucket_model = new double[Input.size()][28];
+		double[][] bucket_model = new double[Input.size()][31];
 		bucket_model_dates = new ArrayList<String>();
 		
 //		  # copy Input into bucket-model
 //		  #col 1: A Date
-//		  # col 2: B Precipitation				  
+//		  # col 2: B Precipitation	
 		  for (int i=0;i<Input.size();i++)
 		  {
 			  bucket_model_dates.add(Input.get(i)[INPUT_DATE]);
 			  bucket_model[i][PRECIPITATION]=Double.parseDouble(Input.get(i)[INPUT_P]);
+			  if (hasKdown)
+			  {
+				  bucket_model[i][K_DOWN]=Double.parseDouble(Input.get(i)[INPUT_K_DOWN]);
+			  }
+			  if (hasWindSpeed)
+			  {
+				  bucket_model[i][WIND_SPEED]=Double.parseDouble(Input.get(i)[INPUT_WIND_SPEED]);
+			  }
+			  if (hasLdown)
+			  {
+				  bucket_model[i][L_DOWN]=Double.parseDouble(Input.get(i)[INPUT_L_DOWN]);
+			  }
 		  }
+		  
 		  
 //		  # water balance check
 		  double sum_prec   = 0.;
@@ -161,10 +219,10 @@ public class SimpelModel
 
 //		  # update LAI model according to soil physics ($kf 2023-03-28) -> ignore land use table
 //		  # update Litter according to land use table
-		  laiModel[0][LAI_V3]= Double.parseDouble(Soil.get(12)[1]);
-		  laiModel[1][LAI_V3]= Double.parseDouble(Soil.get(13)[1]);
-		  laiModel[2][LAI_V3]= Double.parseDouble(Soil.get(13)[1]);
-		  laiModel[3][LAI_V3]= Double.parseDouble(Soil.get(12)[1]);
+		  laiModel[0][LAI_V3]= Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);
+		  laiModel[1][LAI_V3]= Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);
+		  laiModel[2][LAI_V3]= Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);
+		  laiModel[3][LAI_V3]= Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);
 //		  # update Litter according to land use table
 		  double landuse_DayDegree = Double.parseDouble(Landuse.get(16)[landuseIndex]);
 		  
@@ -473,6 +531,55 @@ public class SimpelModel
 		  return bucket_model;
 		}
 	
+
+	//match input headers to forcing fields and figure out which are in the input. Some are mandatory, some optional
+	public void matchInputHeaders(ArrayList<String[]> InputHeader)
+	{
+		for (int i=0;i<InputHeader.size();i++)
+		{
+			if (InputHeader.get(i).equals("Date"))
+			{
+				INPUT_DATE=i;
+			}
+			else if (InputHeader.get(i).equals("DOY"))
+			{
+				INPUT_DOY=i;
+			}
+			else if (InputHeader.get(i).equals("P"))
+			{
+				INPUT_P=i;
+			}
+			else if (InputHeader.get(i).equals("T14"))
+			{
+				INPUT_T14=i;
+			}
+			else if (InputHeader.get(i).equals("RF14"))
+			{
+				INPUT_R14=i;
+			}
+			else if (InputHeader.get(i).equals("KDOWN"))
+			{
+				INPUT_K_DOWN=i;
+				hasKdown = true;
+			}
+			else if (InputHeader.get(i).equals("LDOWN"))
+			{
+				INPUT_L_DOWN=i;
+				hasLdown = true;
+			}
+			else if (InputHeader.get(i).equals("WindSpeed"))
+			{
+				INPUT_WIND_SPEED=i;
+				hasWindSpeed = true;
+			}
+			else if (InputHeader.get(i).equals("ET0"))
+			{
+				INPUT_ET0=i;
+				readETfromFile = true;
+			}
+		}
+	}	
+	
 	double max(double[] items)
 	{
 		return Math.max(items[0], items[1]);
@@ -483,9 +590,45 @@ public class SimpelModel
 	}
 	
    final static Charset ENCODING = StandardCharsets.UTF_8;	
-   public ArrayList<String[]> readLargerTextFileAlternateToArray(String aFileName, boolean skipHeader, String deliminator) 
+   public ArrayList<String[]> readLargerTextFileAlternateToArray(String aFileName, boolean skipHeader, String deliminator, boolean onlyFirstLine) 
    {
 	   ArrayList<String[]> returnFile = new ArrayList<String[]>();
+	   int count = 0;
+	    Path path = Paths.get(aFileName);
+	    try (BufferedReader reader = Files.newBufferedReader(path, ENCODING))
+	    {
+	      String line = null;
+	      while ((line = reader.readLine()) != null) 
+	      {
+	    	  if (onlyFirstLine && count > 0)
+	    	  {
+	    		  return returnFile;
+	    	  }
+	    	  
+	    	  if (skipHeader && count==0)
+	    	  {
+	    		  count++;
+	    		  continue;
+	    	  }
+	    	  if (line != null && line.trim().equals(""))
+	    	  {
+	    		  continue;
+	    	  }
+	    	  String[] lineSplit = line.split(deliminator);
+	    	  returnFile.add(lineSplit);
+	    	  count ++;
+	      }      
+	    }
+		catch (IOException e)
+		{			
+			e.printStackTrace();
+		}
+	    return returnFile;
+	  }
+   
+   public TreeMap<String,String[]> readLargerTextFileAlternateToTreeMap(String aFileName, boolean skipHeader, String deliminator) 
+   {
+	   TreeMap<String,String[]> returnFile = new TreeMap<String,String[]>();
 	   int count = 0;
 	    Path path = Paths.get(aFileName);
 	    try (BufferedReader reader = Files.newBufferedReader(path, ENCODING))
@@ -503,7 +646,8 @@ public class SimpelModel
 	    		  continue;
 	    	  }
 	    	  String[] lineSplit = line.split(deliminator);
-	    	  returnFile.add(lineSplit);
+	    	  String key = lineSplit[0];
+	    	  returnFile.put(key,lineSplit);
 	    	  count ++;
 	      }      
 	    }
