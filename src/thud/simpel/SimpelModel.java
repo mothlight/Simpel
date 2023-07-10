@@ -460,10 +460,10 @@ public class SimpelModel
 		    if(krow==0)
 		    {
 //		      # col 17: Q Inf-Limit
-		      bucket_model[krow][INF_LIMIT] = (Field_Capacity-Init_Value_Soil)*0.25*(1.-Direct_runoff_factor/100.);
+		      bucket_model[krow][INF_LIMIT] = (Field_Capacity-Init_Value_Soil)*0.25; // *(1.-Direct_runoff_factor/100.);
 		      
 //		      # col 18: R P-Inf
-		      bucket_model[krow][P_LINF] = Math.min(bucket_model[krow][S_RESTN],bucket_model[krow][INF_LIMIT])*(1.-Direct_runoff_factor/100.);
+		      bucket_model[krow][P_LINF] = Math.min(bucket_model[krow][S_RESTN],bucket_model[krow][INF_LIMIT])*(1.-Direct_runoff_factor/100.) * nt;
 		      
 //		      # col 19: S S-Rest
 		      bucket_model[krow][REST_ETA] = -1*Math.min(0,bucket_model[krow][BILANZ])+bucket_model[krow][I_REM]-bucket_model[krow][I_ETI_LITTER];
@@ -487,11 +487,11 @@ public class SimpelModel
 //		      # col 23: W Seepage
 		      if(bucket_model[krow][ET_BALANCE] <= Field_Capacity)
 		      {
-		        bucket_model[krow][SEEPAGE] =  Lambda*Math.pow( (bucket_model[krow][ET_BALANCE]-Perm_Wilting_Point),2);
+		        bucket_model[krow][SEEPAGE] =  Lambda*Math.pow( (bucket_model[krow][ET_BALANCE]-Perm_Wilting_Point),2) * nt;
 		      }
 		      else
 		      {
-		        bucket_model[krow][SEEPAGE] =  Lambda*Math.pow( (Field_Capacity-Perm_Wilting_Point),2);
+		        bucket_model[krow][SEEPAGE] =  Lambda*Math.pow( (Field_Capacity-Perm_Wilting_Point),2) * nt;
 		      }		      
 //		      # col 24: X Storage Init.-Value
 		      if(bucket_model[krow][ET_BALANCE] > Field_Capacity)
@@ -535,11 +535,11 @@ public class SimpelModel
 		      if(bucket_model[krow][ET_BALANCE] <= Field_Capacity)
 		      {
 		        bucket_model[krow][SEEPAGE] =  Lambda*
-		        		Math.pow((bucket_model[krow][ET_BALANCE]-Perm_Wilting_Point),2);
+		        		Math.pow((bucket_model[krow][ET_BALANCE]-Perm_Wilting_Point),2) * nt;
 		      }
 		      else
 		      {
-		        bucket_model[krow][SEEPAGE] =  Lambda*Math.pow((Field_Capacity-Perm_Wilting_Point),2);
+		        bucket_model[krow][SEEPAGE] =  Lambda*Math.pow((Field_Capacity-Perm_Wilting_Point),2) * nt;
 		      }
 		      
 //		      # col 24: X Storage Init.-Value
