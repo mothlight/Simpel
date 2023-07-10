@@ -103,6 +103,9 @@ public class SimpelModel
     boolean hasWindSpeed = false;
     boolean hasLdown = false;
 
+    public double INTC_DRAINAGE_MAX_D = 2.88; // mm/d
+    public double INTC_DRAINAGE_EXP_B = 3.7;  // mm^(-1)
+
 	public static void main(String[] args)
 	{
 		SimpelModel s = new SimpelModel();
@@ -343,21 +346,63 @@ public class SimpelModel
 		      bucket_model[krow][LAI] = laimodel43;
 		    }
 
+		    // NEW INTERCEPTION MODEL (which works with different time steps)
+		    // Rutter, A.J., Kershaw, K.A., Robins, P.C., Morton, A.J., 1971. 
+		    // A predictive model of rainfall interception in forests, 1. Derivation 
+		    // of the model from observations in a plantation of Corsican pine. 
+		    // Agr. Meteorol. 9, 367–384.
+
 //		    # col 8: H I-Cap
 		    bucket_model[krow][I_CAP] = 0.35*bucket_model[krow][LAI];
 
-//		    # col 9: I ETi 
-		    bucket_model[krow][INT_ETI_LEAF] = Math.min(bucket_model[krow][I_CAP], bucket_model[krow][ETP_INPUT]);
+		    double intc_drainage_max = INTC_DRAINAGE_MAX_D / 86400 * ts; // max. drainage per time step
+		    // Maximum Drainage rate adjusted to capacity
+	 	    if(intc_drainage_max > bucket_model[krow][I_CAP]) intc_drainage_max = bucket_model[krow][I_CAP];
+		    
+		    // define empty storage for first time step and correct for adjustments in C
+		    double t_surplus = 0.;
+                    double ci = 0.; // first time step: initialize interception capacity, assuming empty storage
+		     if(krow>0){
+		    	ci = bucket_model[krow-1][I_BAL]; // intercepted water from previous time step
+			// Adjust storage as a result of changing capacity
+		    	if( bucket_model[krow-1][I_CAP] !=  bucket_model[krow][I_CAP]  && ci >  bucket_model[krow][I_CAP] ){
+			        t_surplus = ci - bucket_model[krow][I_CAP];
+        			ci = bucket_model[krow][I_CAP];
+		        }
+    		    }
+		    double ntf = 0.25; // fraction of precipitation that always becomes throughfall, todo: make parameter adjustable
+		    double direct_throughfall =  bucket_model[krow][SNOW_MELT_RAIN] *ntf;
+		    double intc_in =  bucket_model[krow][SNOW_MELT_RAIN] - direct_throughfall;
+		    double intc_stor_guess = intc_in+ci; // storage depth
 
-//		    # col 10: J I-Bal.   
-		    bucket_model[krow][I_BAL] = bucket_model[krow][SNOW_MELT_RAIN] - bucket_model[krow][INT_ETI_LEAF];
+//		    # col 9: I ETi: Evaporation from wetted leaf 
+		    // bucket_model[krow][INT_ETI_LEAF] = Math.min(bucket_model[krow][I_CAP], bucket_model[krow][ETP_INPUT]);
+		    if(intc_stor_guess > bucket_model[krow][I_CAP])
+			    bucket_model[krow][INT_ETI_LEAF] = Math.min(bucket_model[krow][ETP_INPUT],intc_stor_guess); // real evaporation
+    		    else
+			    bucket_model[krow][INT_ETI_LEAF] = Math.min(bucket_model[krow][ETP_INPUT]*intc_stor_guess/ bucket_model[krow][I_CAP], intc_stor_guess);
+//		    # col 10: J I-Bal.: Temp calcalation
+		    //bucket_model[krow][I_BAL] = bucket_model[krow][SNOW_MELT_RAIN] - bucket_model[krow][INT_ETI_LEAF];
+		    double intc_drainage;
+		    if(bucket_model[krow][I_CAP] < intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]) 
+			intc_drainage = Math.max(intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]-bucket_model[krow][I_CAP],intc_drainage_max);
+    		    else
+		    	intc_drainage = Math.min(intc_drainage_max*Math.exp(INTC_DRAINAGE_EXP_B*(intc_stor_guess-bucket_model[krow][INT_ETI_LEAF] - bucket_model[krow][I_CAP])/bucket_model[krow][I_CAP]), intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]);
+
+		    // updated meaning of col 10 "I-BAL" is interception storage
+		    bucket_model[krow][I_BAL] = intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]-intc_drainage;
+		    if(bucket_model[krow][I_BAL] <0){
+      			intc_drainage = Math.max(intc_stor_guess+ bucket_model[krow][I_BAL],0);
+      			 bucket_model[krow][I_BAL] = 0.;
+    		    }
 		    
-//		    # col 11: K I-Prec.   
-		    bucket_model[krow][I_PREC] = Math.max(bucket_model[krow][I_BAL],0) ;
+//		    # col 11: K I-Prec.: Throughfall   
+		    bucket_model[krow][I_PREC] = direct_throughfall + intc_drainage + t_surplus;
 		    
-//		    # col 12: L I-Rem.
-		    bucket_model[krow][I_REM] = -1*Math.min(bucket_model[krow][I_BAL],0)
-		    		-bucket_model[krow][INT_ETI_LEAF]+bucket_model[krow][ETP_INPUT];
+//		    # col 12: L I-Rem.: Remaining ETa passed to subsequent model
+		    // bucket_model[krow][I_REM] = -1*Math.min(bucket_model[krow][I_BAL],0)
+		    // 		-bucket_model[krow][INT_ETI_LEAF]+bucket_model[krow][ETP_INPUT];
+		    bucket_model[krow][I_REM] = bucket_model[krow][ETP_INPUT] - bucket_model[krow][INT_ETI_LEAF];	
 
 //		    # col 13+14+15
 //		    # first row
@@ -528,7 +573,7 @@ public class SimpelModel
 		    krowEnd = krow;
 		  }
 //		  # water balance check
-		  double water_balance = sum_prec - sum_etr - sum_runoff + init_swe + init_stor - bucket_model[krowEnd][STORAGE] - bucket_model[krowEnd][SNOW_WATER_EQUI];
+		  double water_balance = sum_prec - sum_etr - sum_runoff + init_swe + init_stor - bucket_model[krowEnd][STORAGE] - bucket_model[krowEnd][SNOW_WATER_EQUI] - bucket_model[krowEnd][I_BAL];
 		  System.out.println("water balance check");
 		  System.out.println(water_balance);
 		  
