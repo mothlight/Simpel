@@ -243,7 +243,15 @@ public class SimpelModel
 		  double laimodel43 = Double.parseDouble(LAI_model.get(3)[2]); // LAI_model[4,3]
 		  double laimodel42 = Double.parseDouble(LAI_model.get(3)[1]); // LAI_model[4,2]
         
-          double nt = ts / SECONDS_PER_DAY; // fractional time step
+          	  double nt = ts / SECONDS_PER_DAY; // fractional time step
+		  // In the model the drying is controlled by the ”litter reduction factor” which 
+		  // specifies the maximum evaporation expressed as part of the water content. 
+		  // Therefore, a factor 2 indicates that within each step of calculation a maximum 
+		  // of half of the storage capacity can evaporate. (source: SIMPEL dcos)
+		  // The input value refers to daily time step. Thus it's adjusted to arbitrary
+		  // time steps through division by nt.
+		  double Litter_Reduction_factor_dt = Litter_Reduction_factor / nt;
+		  
 		   
 //		  # calculate the rest
 		  for(int krow=0;krow<Input.size();krow++)
@@ -409,7 +417,7 @@ public class SimpelModel
 		    if(krow==0)
 		    {
 //		      # col 13: M ETi Litter
-		      double[] temp = new double[]{Cap_Litter,(0+bucket_model[krow][I_PREC])/Litter_Reduction_factor};
+		      double[] temp = new double[]{Cap_Litter,(0+bucket_model[krow][I_PREC])/Litter_Reduction_factor_dt};
 		      bucket_model[krow][I_ETI_LITTER] = Math.min(bucket_model[krow][I_REM],min(temp));
 		      
 //		      # col 14: N Bilanz (needed for col 13 & 15)
@@ -428,7 +436,7 @@ public class SimpelModel
 		    else
 		    {//# rest of the rows
 //		      # col 13: M ETi Litter
-		      double[] temp = new double[]{Cap_Litter, (bucket_model[krow-1][CONTENT]+bucket_model[krow][I_PREC])/Litter_Reduction_factor};
+		      double[] temp = new double[]{Cap_Litter, (bucket_model[krow-1][CONTENT]+bucket_model[krow][I_PREC])/Litter_Reduction_factor_dt};
 		      bucket_model[krow][I_ETI_LITTER] = Math.min(bucket_model[krow][I_REM],min(temp));
 		      
 //		      # col 14: N Bilanz (needed for col 13 & 15)
