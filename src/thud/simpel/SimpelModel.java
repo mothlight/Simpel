@@ -581,7 +581,7 @@ public class SimpelModel
 		    krowEnd = krow;
 		  }
 //		  # water balance check
-		  double water_balance = sum_prec - sum_etr - sum_runoff + init_swe + init_stor - bucket_model[krowEnd][STORAGE] - bucket_model[krowEnd][SNOW_WATER_EQUI] - bucket_model[krowEnd][I_BAL];
+		  double water_balance = sum_prec - sum_etr - sum_runoff + init_swe + init_stor - bucket_model[krowEnd][STORAGE] - bucket_model[krowEnd][SNOW_WATER_EQUI] - bucket_model[krowEnd][I_BAL] - bucket_model[krowEnd][CONTENT];
 		  System.out.println("water balance check");
 		  System.out.println(water_balance);
 		  
