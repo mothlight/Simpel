@@ -414,6 +414,7 @@ public class SimpelModel
 
 //		    # col 13+14+15
 //		    # first row
+//		    # litter reduction is now adjusted to time step of input series
 		    if(krow==0)
 		    {
 //		      # col 13: M ETi Litter
@@ -457,10 +458,11 @@ public class SimpelModel
 		    
 //		    # col 17-24:
 //		    # first row
+//		    # Groundwater recharge computation with Glugla approach now adjusted to time step length
 		    if(krow==0)
 		    {
 //		      # col 17: Q Inf-Limit
-		      bucket_model[krow][INF_LIMIT] = (Field_Capacity-Init_Value_Soil)*0.25; // *(1.-Direct_runoff_factor/100.);
+		      bucket_model[krow][INF_LIMIT] = (Field_Capacity-Init_Value_Soil)*0.25; // *(1.-Direct_runoff_factor/100.); /* bug fix */
 		      
 //		      # col 18: R P-Inf
 		      bucket_model[krow][P_LINF] = Math.min(bucket_model[krow][S_RESTN],bucket_model[krow][INF_LIMIT])*(1.-Direct_runoff_factor/100.) * nt;
