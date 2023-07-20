@@ -97,7 +97,7 @@ public class SimpelModel
     
   //public int numColumnsInput = 6;  //hardcoding this for now.
     private boolean readETfromFile = false; //hardcoding this for now. $kf2023-06-23
-    private double ts = 86400.; // model time step in seconds
+    // private double ts = 86400.; // model time step in seconds
     int krowEnd = 0;
     boolean hasKdown = false;
     boolean hasWindSpeed = false;
@@ -243,6 +243,7 @@ public class SimpelModel
 		  double laimodel43 = Double.parseDouble(LAI_model.get(3)[2]); // LAI_model[4,3]
 		  double laimodel42 = Double.parseDouble(LAI_model.get(3)[1]); // LAI_model[4,2]
         
+		  double ts = timestep * 3600; // timestep from soil physics is given in hours, ts is a conversion to seconds
           	  double nt = ts / SECONDS_PER_DAY; // fractional time step
 		  // In the model the drying is controlled by the ”litter reduction factor” which 
 		  // specifies the maximum evaporation expressed as part of the water content. 
