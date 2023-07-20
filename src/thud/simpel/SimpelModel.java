@@ -764,7 +764,10 @@ public class SimpelModel
 				+ "Runoff_total" + tab
 				+ "I-Leaf" + tab
 				+ "I-Litter" + tab
-				+ "ETaTotal";
+				+ "ETaTotal" + tab
+				+ "K_DOWN" + tab
+				+ "WINDSPEED" + tab
+				+ "L_DOWN";
 		StringBuilder sb = new StringBuilder();
 		sb.append(header + linefeed);
 		int width = bucket_model[0].length;
