@@ -74,18 +74,18 @@ public class SimpelModel
     public final static String START_OF_REDUCTION_PERCENT = "Start of Reduction %";
     public final static String ROOT_DEPTH = "Root Depth";
     public final static String INIT_VALUE_SOIL_PERCENT = "Init-Value Soil %";
-    public final static String FIELD_CAPACITY = "Field Capacity";
-    public final static String PERM_WILTING_POINT = "Perm. Wilting Point";
-    public final static String FWC = "FWC";
-    public final static String START_OF_REDUCTION = "Start of Reduction";
-    public final static String INIT_VALUE_SOIL = "Init-Value Soil";
-    public final static String DEPTH_OF_SOIL = "Depth of soil";	
+    //public final static String FIELD_CAPACITY = "Field Capacity";
+    //public final static String PERM_WILTING_POINT = "Perm. Wilting Point";
+    //public final static String FWC = "FWC";
+    //public final static String START_OF_REDUCTION = "Start of Reduction";
+    //public final static String INIT_VALUE_SOIL = "Init-Value Soil";
+    //public final static String DEPTH_OF_SOIL = "Depth of soil";	
     public final static String LAND_USE = "Land use";
     public final static String MINIMUM_LAI = "Minimum LAI";
     public final static String MAXIMUM_LAI = "Maximum LAI";
     public final static String DIRECT_RUNOFF_FACTOR = "Direct runoff factor";				
     public final static String KOEFF_C = "Koeff. c";
-    public final static String LAMBDA = "Lambda";	
+    //public final static String LAMBDA = "Lambda";	
     public final static String CAP_LITTER = "Cap. Litter";
     public final static String INIT_VALUE_LITTER = "Init-Value Litter";
     public final static String LITTER_REDUCTION_FACTOR = "Litter Reduction factor";	
@@ -153,29 +153,60 @@ public class SimpelModel
 		double Start_of_Reduction_Percent=Double.parseDouble(Soil.get(START_OF_REDUCTION_PERCENT)[1]);//Soil[3][2]
 		double Root_Depth=Double.parseDouble(Soil.get(ROOT_DEPTH)[1]);//Soil[4][2]
 		double Init_Value_Soil_Percent=Double.parseDouble(Soil.get(INIT_VALUE_SOIL_PERCENT)[1]);//Soil[5][2]
-		double Field_Capacity=Double.parseDouble(Soil.get(FIELD_CAPACITY)[1]);//Soil[6][2]
-		double Perm_Wilting_Point=Double.parseDouble(Soil.get(PERM_WILTING_POINT)[1]);//Soil[7][2]
-		double fwc=Double.parseDouble(Soil.get(FWC)[1]);//Soil[8][2]
-		double Start_of_Reduction=Double.parseDouble(Soil.get(START_OF_REDUCTION)[1]);//Soil[9][2]
-		double Init_Value_Soil=Double.parseDouble(Soil.get(INIT_VALUE_SOIL)[1]);//Soil[10][2]
-		double Depth_of_soil=Double.parseDouble(Soil.get(DEPTH_OF_SOIL)[1]);//Soil[11][2]
+		double Field_Capacity= Field_Capacity_Percent * Root_Depth / 10.;//Double.parseDouble(Soil.get(FIELD_CAPACITY)[1]);//Soil[6][2]
+		double Perm_Wilting_Point=Permanent_Wilting_Point * Root_Depth / 10.;//Double.parseDouble(Soil.get(PERM_WILTING_POINT)[1]);//Soil[7][2]
+		double fwc=Field_Capacity-Perm_Wilting_Point;//Double.parseDouble(Soil.get(FWC)[1]);//Soil[8][2]
+		double Start_of_Reduction= Start_of_Reduction_Percent * Root_Depth / 10.;///Double.parseDouble(Soil.get(START_OF_REDUCTION)[1]);//Soil[9][2]
+		double Init_Value_Soil=Init_Value_Soil_Percent * Root_Depth / 10.;//Double.parseDouble(Soil.get(INIT_VALUE_SOIL)[1]);//Soil[10][2]
+		double Depth_of_soil=Root_Depth*10;//Double.parseDouble(Soil.get(DEPTH_OF_SOIL)[1]);//Soil[11][2]
 		String Land_use=Soil.get(LAND_USE)[1];//Soil[12][2]
 		double Minimum_LAI=Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);//Soil[13][2]
 		double Maximum_LAI=Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);//Soil[14][2]
 		double Direct_runoff_factor=Double.parseDouble(Soil.get(DIRECT_RUNOFF_FACTOR)[1]);//Soil[15][2]			
 		double Koeff_c=Double.parseDouble(Soil.get(KOEFF_C)[1]);//Soil[16][2]
-		double Lambda=Double.parseDouble(Soil.get(LAMBDA)[1]);//Soil[17][2]
+		double Lambda=Koeff_c/Depth_of_soil/Depth_of_soil;///Double.parseDouble(Soil.get(LAMBDA)[1]);//Soil[17][2]
 		double Cap_Litter=Double.parseDouble(Soil.get(CAP_LITTER)[1]);//Soil[18][2]
 		double Init_Value_Litter=Double.parseDouble(Soil.get(INIT_VALUE_LITTER)[1]);//Soil[19][2]
 		double Litter_Reduction_factor=Double.parseDouble(Soil.get(LITTER_REDUCTION_FACTOR)[1]);//Soil[20][2]
-		
+
 		// KN 5/7/23, added a timestep. Date values in Global_Input can be
 		// 02.01.1995.00, 02.01.1995.12 
 		// ETP_COEFF requires the month to be the second item in the date (split by '.')
 		double timestep=Double.parseDouble(Soil.get(TIMESTEP)[1]);  
 		
 		int landuseIndex = landusesIndexes.get(Land_use); 
-		
+
+
+
+		// Check parameters (just to show what is mandatory and what is derived, can be deleted)
+		System.out.println("SIMPEL");
+		System.out.println("======");
+		System.out.println("\nParameters:");
+		System.out.println("Field Capacity: "+String.format("%,.2f", Field_Capacity_Percent)+"%");
+		System.out.println("Permanent Wilting Point: "+String.format("%,.2f", Permanent_Wilting_Point)+"%");
+		System.out.println("Start of Reduction: "+String.format("%,.2f", Start_of_Reduction_Percent)+"%");
+		System.out.println("Root depth: "+String.format("%,.2f", Root_Depth)+" cm");
+		System.out.println("Init-Value Soil: "+String.format("%,.2f", Init_Value_Soil_Percent)+"%");
+		System.out.println("Land use: "+Land_use);
+		System.out.println("Minimum_LAI: "+String.format("%,.2f", Minimum_LAI)+"");
+		System.out.println("Maximum_LAI: "+String.format("%,.2f", Maximum_LAI)+"");
+		System.out.println("Direct runoff factor: "+String.format("%,.2f", Direct_runoff_factor)+"");
+		System.out.println("Coefficient c (Glugla): "+String.format("%,.2f", Koeff_c)+"");
+		System.out.println("Capacity of Litter Layer: "+String.format("%,.2f", Cap_Litter)+" mm");
+		System.out.println("Initial value of Litter Layer: "+String.format("%,.2f", Init_Value_Litter)+" mm");
+		System.out.println("Litter Reduction factor "+String.format("%,.2f", Litter_Reduction_factor)+"");
+		System.out.println("Time step: "+String.format("%,.2f", timestep)+" hours");
+
+
+		System.out.println("\nDerived values");
+		System.out.println("Field Capacity: "+String.format("%,.2f", Field_Capacity)+" mm");
+		System.out.println("Perm_Wilting_Point: "+String.format("%,.2f", Perm_Wilting_Point)+" mm");
+		System.out.println("FWC: "+String.format("%,.2f", fwc)+" mm");
+		System.out.println("Start_of_Reduction: "+String.format("%,.2f", Start_of_Reduction)+" mm");
+		System.out.println("Init-Value Soil: "+String.format("%,.2f", Init_Value_Soil)+" mm");
+		System.out.println("Depth of soil: "+String.format("%,.2f", Depth_of_soil)+" mm");
+		System.out.println("Lambda (Glugla): "+String.format("%,.8f", Lambda)+"");
+
 //		# SIMPLE_function
 //		# original Excel spreadsheet developed by Georg Hörmann
 //		# extended (snow, surface runoff) by Kristian Förster 2022

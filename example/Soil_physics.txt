@@ -3,18 +3,11 @@ Permanent Wilting Point %;12;Water Content Vol. %
 Start of Reduction %;20;Water Content Vol. %
 Root Depth;100;(cm)
 Init-Value Soil %;20;(Vol.-%)
-Field Capacity;250;in mm
-Perm. Wilting Point;120;calculated to
-FWC;130;rooting depth
-Start of Reduction;200;Start Reduction Etp to Eta
-Init-Value Soil;200;(mm)
-Depth of soil;1000;(mm)		
 Land use;grassland;(see land_use tab)
 Minimum LAI;1;(from land-use table)
 Maximum LAI;2;(from land-use table)
 Direct runoff factor;15;-				
 Koeff. c;150;-
-Lambda;0.00015;-	
 Cap. Litter;0;(mm)
 Init-Value Litter;0;(mm)
 Litter Reduction factor;3;-
