@@ -1,3 +1,4 @@
+Timestep;24;Time step in hours
 Field Capacity %;25;Water Content Vol. %
 Permanent Wilting Point %;12;Water Content Vol. %
 Start of Reduction %;20;Water Content Vol. %
@@ -6,9 +7,12 @@ Init-Value Soil %;20;(Vol.-%)
 Land use;grassland;(see land_use tab)
 Minimum LAI;1;(from land-use table)
 Maximum LAI;2;(from land-use table)
-Direct runoff factor;15;-				
-Koeff. c;150;-
+Vegetation Fraction;0.75;Fraction covered by vegetation (-)
+Layer Thickness;0.35;Layer Thickness of Water Interception for LAI 1 (mm)
+Drainage Coeff. b;3.7;Drainage Coefficient b in Interception model
+Max. Drainage Rate;2.88;Interception Max. Drainage Rate (mm/d)
 Cap. Litter;0;(mm)
 Init-Value Litter;0;(mm)
 Litter Reduction factor;3;-
-Timestep;24;	
+Direct runoff factor;15;-				
+Glugla coeff.;150;-

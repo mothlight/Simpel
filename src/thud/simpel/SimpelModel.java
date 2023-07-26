@@ -62,9 +62,10 @@ public class SimpelModel
     public static int INPUT_WIND_SPEED=7;
     public static int INPUT_L_DOWN=8;
     
-    public final static int LAI_DOY = 0;
-    public final static int LAI_LAI = 1;
-    public final static int LAI_V3 = 2;
+    public final static int LAI_IND = 0;
+    public final static int LAI_DOY = 1;
+    public final static int LAI_PHASE = 2;
+    public final static int LAI_LAI = 3;
     public final static double SECONDS_PER_DAY = 86400.;
     
     
@@ -83,8 +84,12 @@ public class SimpelModel
     public final static String LAND_USE = "Land use";
     public final static String MINIMUM_LAI = "Minimum LAI";
     public final static String MAXIMUM_LAI = "Maximum LAI";
+    public final static String INTC_COVERED_FRACTION = "Vegetation Fraction";
+    public final static String INTC_LAYER_THICKNESS = "Layer Thickness";
+    public final static String INTC_DRAINAGE_EXP_B = "Drainage Coeff. b";
+    public final static String INTC_DRAINAGE_MAX = "Max. Drainage Rate";
     public final static String DIRECT_RUNOFF_FACTOR = "Direct runoff factor";				
-    public final static String KOEFF_C = "Koeff. c";
+    public final static String GLUGLA_C = "Glugla coeff.";
     //public final static String LAMBDA = "Lambda";	
     public final static String CAP_LITTER = "Cap. Litter";
     public final static String INIT_VALUE_LITTER = "Init-Value Litter";
@@ -103,8 +108,8 @@ public class SimpelModel
     boolean hasWindSpeed = false;
     boolean hasLdown = false;
 
-    public double INTC_DRAINAGE_MAX_D = 2.88; // mm/d
-    public double INTC_DRAINAGE_EXP_B = 3.7;  // mm^(-1)
+    //public double INTC_DRAINAGE_MAX_D = 2.88; // mm/d
+    //public double INTC_DRAINAGE_EXP_B = 3.7;  // mm^(-1)
 
 	public static void main(String[] args)
 	{
@@ -162,9 +167,13 @@ public class SimpelModel
 		String Land_use=Soil.get(LAND_USE)[1];//Soil[12][2]
 		double Minimum_LAI=Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);//Soil[13][2]
 		double Maximum_LAI=Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);//Soil[14][2]
+		double vcover=Double.parseDouble(Soil.get(INTC_COVERED_FRACTION)[1]);
+		double layer_thickness=Double.parseDouble(Soil.get(INTC_LAYER_THICKNESS)[1]);
+		double intc_drainage_coeff_b=Double.parseDouble(Soil.get(INTC_DRAINAGE_EXP_B)[1]);
+		double intc_drainage_max_d=Double.parseDouble(Soil.get(INTC_DRAINAGE_MAX)[1]);
 		double Direct_runoff_factor=Double.parseDouble(Soil.get(DIRECT_RUNOFF_FACTOR)[1]);//Soil[15][2]			
-		double Koeff_c=Double.parseDouble(Soil.get(KOEFF_C)[1]);//Soil[16][2]
-		double Lambda=Koeff_c/Depth_of_soil/Depth_of_soil;///Double.parseDouble(Soil.get(LAMBDA)[1]);//Soil[17][2]
+		double Glugla_Coeff_c=Double.parseDouble(Soil.get(GLUGLA_C)[1]);//Soil[16][2]
+		double Lambda=Glugla_Coeff_c/Depth_of_soil/Depth_of_soil;///Double.parseDouble(Soil.get(LAMBDA)[1]);//Soil[17][2]
 		double Cap_Litter=Double.parseDouble(Soil.get(CAP_LITTER)[1]);//Soil[18][2]
 		double Init_Value_Litter=Double.parseDouble(Soil.get(INIT_VALUE_LITTER)[1]);//Soil[19][2]
 		double Litter_Reduction_factor=Double.parseDouble(Soil.get(LITTER_REDUCTION_FACTOR)[1]);//Soil[20][2]
@@ -182,6 +191,7 @@ public class SimpelModel
 		System.out.println("SIMPEL");
 		System.out.println("======");
 		System.out.println("\nParameters:");
+		System.out.println("Time step: "+String.format("%,.2f", timestep)+" hours");
 		System.out.println("Field Capacity: "+String.format("%,.2f", Field_Capacity_Percent)+"%");
 		System.out.println("Permanent Wilting Point: "+String.format("%,.2f", Permanent_Wilting_Point)+"%");
 		System.out.println("Start of Reduction: "+String.format("%,.2f", Start_of_Reduction_Percent)+"%");
@@ -190,13 +200,15 @@ public class SimpelModel
 		System.out.println("Land use: "+Land_use);
 		System.out.println("Minimum_LAI: "+String.format("%,.2f", Minimum_LAI)+"");
 		System.out.println("Maximum_LAI: "+String.format("%,.2f", Maximum_LAI)+"");
-		System.out.println("Direct runoff factor: "+String.format("%,.2f", Direct_runoff_factor)+"");
-		System.out.println("Coefficient c (Glugla): "+String.format("%,.2f", Koeff_c)+"");
+		System.out.println("Vegetation cover fraction: "+String.format("%,.2f", vcover)+"");
+		System.out.println("Layer Thickness: "+String.format("%,.2f", layer_thickness)+"mm");
+		System.out.println("Drainage Coeff. b: "+String.format("%,.2f", intc_drainage_coeff_b)+"");
+		System.out.println("Max. Drainage rate: "+String.format("%,.2f", intc_drainage_max_d)+"mm/d");
 		System.out.println("Capacity of Litter Layer: "+String.format("%,.2f", Cap_Litter)+" mm");
 		System.out.println("Initial value of Litter Layer: "+String.format("%,.2f", Init_Value_Litter)+" mm");
 		System.out.println("Litter Reduction factor "+String.format("%,.2f", Litter_Reduction_factor)+"");
-		System.out.println("Time step: "+String.format("%,.2f", timestep)+" hours");
-
+		System.out.println("Direct runoff factor: "+String.format("%,.2f", Direct_runoff_factor)+"");
+		System.out.println("Coefficient c (Glugla): "+String.format("%,.2f", Glugla_Coeff_c)+"");
 
 		System.out.println("\nDerived values");
 		System.out.println("Field Capacity: "+String.format("%,.2f", Field_Capacity)+" mm");
@@ -246,34 +258,35 @@ public class SimpelModel
 		  double init_stor  = Init_Value_Soil; 
 		  double init_swe   = 0.;
 		    
-		  double[][] laiModel = new double[4][3];
+		  double[][] laiModel = new double[4][4];
 		  for (int i=0;i<LAI_model.size();i++)
 		  {
-			  laiModel[i][LAI_DOY] = Double.parseDouble(LAI_model.get(i)[0]);
-			  laiModel[i][LAI_LAI] = Double.parseDouble(LAI_model.get(i)[1]);
+			  laiModel[i][LAI_IND] = Double.parseDouble(LAI_model.get(i)[0]);
+			  laiModel[i][LAI_DOY] = Double.parseDouble(LAI_model.get(i)[1]);
+			  laiModel[i][LAI_PHASE] = Double.parseDouble(LAI_model.get(i)[2]);
 		  }
-
+		  
 //		  # update LAI model according to soil physics ($kf 2023-03-28) -> ignore land use table
 //		  # update Litter according to land use table
-		  laiModel[0][LAI_V3]= Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);
-		  laiModel[1][LAI_V3]= Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);
-		  laiModel[2][LAI_V3]= Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);
-		  laiModel[3][LAI_V3]= Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);
+		  laiModel[0][LAI_LAI]= Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);
+		  laiModel[1][LAI_LAI]= Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);
+		  laiModel[2][LAI_LAI]= Double.parseDouble(Soil.get(MAXIMUM_LAI)[1]);
+		  laiModel[3][LAI_LAI]= Double.parseDouble(Soil.get(MINIMUM_LAI)[1]);
 //		  # update Litter according to land use table
 		  double landuse_DayDegree = Double.parseDouble(Landuse.get(16)[landuseIndex]);
 		  
-		  double laimodel13 = Double.parseDouble(LAI_model.get(0)[2]); // LAI_model[1,3]
-		  double laimodel12 = Double.parseDouble(LAI_model.get(0)[1]); // LAI_model[1,2]
+		  double laimodel13 = laiModel[0][LAI_LAI]; //Double.parseDouble(LAI_model.get(0)[2]); // LAI_model[1,3]
+		  double laimodel12 = laiModel[0][LAI_DOY]; //Double.parseDouble(LAI_model.get(0)[1]); // LAI_model[1,2]
 		  
-		  double laimodel23 = Double.parseDouble(LAI_model.get(1)[2]); // LAI_model[2,3]
-		  double laimodel22 = Double.parseDouble(LAI_model.get(1)[1]); // LAI_model[2,2]
+		  double laimodel23 = laiModel[1][LAI_LAI]; //Double.parseDouble(LAI_model.get(1)[2]); // LAI_model[2,3]
+		  double laimodel22 = laiModel[1][LAI_DOY]; //Double.parseDouble(LAI_model.get(1)[1]); // LAI_model[2,2]
 		  
-		  double laimodel33 = Double.parseDouble(LAI_model.get(2)[2]); // LAI_model[3,3]
-		  double laimodel32 = Double.parseDouble(LAI_model.get(2)[1]); // LAI_model[3,2]
+		  double laimodel33 = laiModel[2][LAI_LAI]; //Double.parseDouble(LAI_model.get(2)[2]); // LAI_model[3,3]
+		  double laimodel32 = laiModel[2][LAI_DOY]; //Double.parseDouble(LAI_model.get(2)[1]); // LAI_model[3,2]
 		  
-		  double laimodel43 = Double.parseDouble(LAI_model.get(3)[2]); // LAI_model[4,3]
-		  double laimodel42 = Double.parseDouble(LAI_model.get(3)[1]); // LAI_model[4,2]
-        
+		  double laimodel43 = laiModel[3][LAI_LAI]; //Double.parseDouble(LAI_model.get(3)[2]); // LAI_model[4,3]
+		  double laimodel42 = laiModel[3][LAI_DOY]; //Double.parseDouble(LAI_model.get(3)[1]); // LAI_model[4,2]
+
 		  double ts = timestep * 3600; // timestep from soil physics is given in hours, ts is a conversion to seconds
           	  double nt = ts / SECONDS_PER_DAY; // fractional time step
 		  // In the model the drying is controlled by the ”litter reduction factor” which 
@@ -393,9 +406,9 @@ public class SimpelModel
 		    // Agr. Meteorol. 9, 367–384.
 
 //		    # col 8: H I-Cap
-		    bucket_model[krow][I_CAP] = 0.35*bucket_model[krow][LAI];
+		    bucket_model[krow][I_CAP] = layer_thickness*bucket_model[krow][LAI];
 
-		    double intc_drainage_max = INTC_DRAINAGE_MAX_D / 86400 * ts; // max. drainage per time step
+		    double intc_drainage_max = intc_drainage_max_d / 86400 * ts; // max. drainage per time step
 		    // Maximum Drainage rate adjusted to capacity
 	 	    if(intc_drainage_max > bucket_model[krow][I_CAP]) intc_drainage_max = bucket_model[krow][I_CAP];
 		    
@@ -410,8 +423,8 @@ public class SimpelModel
         			ci = bucket_model[krow][I_CAP];
 		        }
     		    }
-		    double ntf = 0.25; // fraction of precipitation that always becomes throughfall, todo: make parameter adjustable
-		    double direct_throughfall =  bucket_model[krow][SNOW_MELT_RAIN] *ntf;
+		    //double ntf = 0.25; // fraction of precipitation that always becomes throughfall, todo: make parameter adjustable
+		    double direct_throughfall =  bucket_model[krow][SNOW_MELT_RAIN] *(1.-vcover);
 		    double intc_in =  bucket_model[krow][SNOW_MELT_RAIN] - direct_throughfall;
 		    double intc_stor_guess = intc_in+ci; // storage depth
 
@@ -427,7 +440,7 @@ public class SimpelModel
 		    if(bucket_model[krow][I_CAP] < intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]) 
 			intc_drainage = Math.max(intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]-bucket_model[krow][I_CAP],intc_drainage_max);
     		    else
-		    	intc_drainage = Math.min(intc_drainage_max*Math.exp(INTC_DRAINAGE_EXP_B*(intc_stor_guess-bucket_model[krow][INT_ETI_LEAF] - bucket_model[krow][I_CAP])/bucket_model[krow][I_CAP]), intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]);
+		    	intc_drainage = Math.min(intc_drainage_max*Math.exp(intc_drainage_coeff_b*(intc_stor_guess-bucket_model[krow][INT_ETI_LEAF] - bucket_model[krow][I_CAP])/bucket_model[krow][I_CAP]), intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]);
 
 		    // updated meaning of col 10 "I-BAL" is interception storage
 		    bucket_model[krow][I_BAL] = intc_stor_guess-bucket_model[krow][INT_ETI_LEAF]-intc_drainage;
